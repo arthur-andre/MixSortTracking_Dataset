@@ -16,7 +16,7 @@ class Exp(MyExp):
         self.width = 1.25
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
         self.train_ann = "train.json"
-        self.val_ann = "val.json"   # change to train.json when running on training set
+        self.val_ann = "test.json"   # change to train.json when running on training set
         self.input_size = (800, 1440)
         self.test_size = (800, 1440)
         self.random_size = (18, 32)
@@ -38,9 +38,8 @@ class Exp(MyExp):
             InfiniteSampler,
             MosaicDetection,
         )
-
         dataset = MOTDataset(
-            data_dir=os.path.join(get_yolox_datadir(), "SportsMOT"),
+            data_dir=os.path.join(get_yolox_datadir(), "lbj_clip"),
             json_file=self.train_ann,
             name='train',
             img_size=self.input_size,
@@ -91,20 +90,40 @@ class Exp(MyExp):
 
         return train_loader
 
-    def get_eval_loader(self, batch_size, is_distributed, testdev=False, return_origin_img=False):
+    def get_eval_loader(self, batch_size, is_distributed, testdev=False, return_origin_img=False, output_folder_name=None, nba_dataset = False):
         from yolox.data import MOTDataset, ValTransform
+        print('eval loader')
+        if output_folder_name == None:
+            print("Error in output name")
+            return False
+        else:
+            print("name :", output_folder_name)
 
-        valdataset = MOTDataset(
-            data_dir=os.path.join(get_yolox_datadir(), "SportsMOT"),
-            json_file=self.val_ann,
-            img_size=self.test_size,
-            name='val', # change to train when running on training set
-            preproc=ValTransform(
-                rgb_means=(0.485, 0.456, 0.406),
-                std=(0.229, 0.224, 0.225),
-            ),
-            return_origin_img=return_origin_img,
-        )
+        if nba_dataset:
+            valdataset = MOTDataset(
+                #data_dir=os.path.join(get_yolox_datadir(), output_folder_name),    CHANGE IF LOCAL DATA
+                data_dir=os.path.join('/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets', output_folder_name),
+                json_file=self.val_ann,
+                img_size=self.test_size,
+                name='test', # change to train when running on training set
+                preproc=ValTransform(
+                    rgb_means=(0.485, 0.456, 0.406),
+                    std=(0.229, 0.224, 0.225),
+                ),
+                return_origin_img=return_origin_img,
+            )
+        else:
+            valdataset = MOTDataset(
+                data_dir=os.path.join(get_yolox_datadir(), output_folder_name),
+                json_file=self.val_ann,
+                img_size=self.test_size,
+                name='test', # change to train when running on training set
+                preproc=ValTransform(
+                    rgb_means=(0.485, 0.456, 0.406),
+                    std=(0.229, 0.224, 0.225),
+                ),
+                return_origin_img=return_origin_img,
+            )
 
         if is_distributed:
             batch_size = batch_size // dist.get_world_size()

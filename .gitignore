@@ -140,3 +140,13 @@ docs/api
 events.out.tfevents*
 pretrained
 YOLOX_outputs
+videos/*
+output/*
+nba_videos/*
+datasets/*
+
+
+!videos/.gitkeep
+!output/.gitkeep
+!nba_videos/.gitkeep
+!datasets/.gitkeep

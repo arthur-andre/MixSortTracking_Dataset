@@ -4,6 +4,7 @@
 
 import cv2
 import numpy as np
+import os
 
 __all__ = ["vis"]
 
@@ -49,10 +50,14 @@ def get_color(idx):
     return color
 
 
-def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None):
+def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None, nba_video=False):
+    if image.is_cuda:
+        image = image.cpu()
+    if len(image.shape) > 3:
+        image = image.squeeze(0)
+        image = image.numpy().transpose(1, 2, 0)
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
-
     top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
 
     #text_scale = max(1, image.shape[1] / 1600.)
@@ -77,6 +82,53 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=N
         cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
         cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
+    #save the image number of the frame
+    cv2.imwrite('output/frame{}.jpg'.format(frame_id), im)
+    return im
+
+def plot_tracking_inference(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None, nba_video=False):
+    if nba_video:
+        image_directory = '/n/home12/aandre/MixSortTracking/datasets/28/test/28/img1'   #HERE CHANGE FOR VIZ
+
+        # Define the frame ID and format it to six digits with leading zeros
+        frame_id_real = frame_id - 1
+        formatted_frame_id = f'{frame_id_real:06d}.jpg'
+
+        # Construct the full path to the image by adding \ between the directory and the formatted frame ID
+        image_path = os.path.join(image_directory, formatted_frame_id)
+        image = cv2.imread(image_path)
+    if len(image.shape) > 3:
+        image = image.squeeze(0)
+        image = image.numpy().transpose(1, 2, 0)
+    im = np.ascontiguousarray(np.copy(image))
+
+    im_h, im_w = im.shape[:2]
+    top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
+
+    #text_scale = max(1, image.shape[1] / 1600.)
+    #text_thickness = 2
+    #line_thickness = max(1, int(image.shape[1] / 500.))
+    text_scale = 2
+    text_thickness = 2
+    line_thickness = 3
+
+    radius = max(5, int(im_w/140.))
+    cv2.putText(im, 'frame: %d fps: %.2f num: %d' % (frame_id, fps, len(tlwhs)),
+                (0, int(15 * text_scale)), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), thickness=2)
+
+    for i, tlwh in enumerate(tlwhs):
+        x1, y1, w, h = tlwh
+        intbox = tuple(map(int, (x1, y1, x1 + w, y1 + h)))
+        obj_id = int(obj_ids[i])
+        id_text = '{}'.format(int(obj_id))
+        if ids2 is not None:
+            id_text = id_text + ', {}'.format(int(ids2[i]))
+        color = get_color(abs(obj_id))
+        cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
+        cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
+                    thickness=text_thickness)
+    #save the image number of the frame
+    cv2.imwrite('output/KT/frame{}.jpg'.format(frame_id), im)
     return im
 
 

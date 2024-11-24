@@ -208,7 +208,8 @@ def main_bis(exp, args, num_gpu):
         decoder = None
 
 #######  ITERATION  ########
-    directory_path= f'/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets/{args.nba_match}'
+    #directory_path= f'/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets/{args.nba_match}'
+    directory_path = f"datasets/{args.nba_match}"
     #action_names = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
     #action_names = sorted(action_names, key=int)
 
@@ -218,7 +219,9 @@ def main_bis(exp, args, num_gpu):
 
     #print("number of actions to process :" ,len(action_names))
     for action_name in action_names:
-        #print("track action : ", action_name)
+        if int(action_name) < 386:
+            continue
+        print("track action : ", action_name)
         file_name_bis = os.path.join(file_name, str(action_name))
         results_folder = os.path.join(file_name_bis, "track_results")
         os.makedirs(results_folder, exist_ok=True)
@@ -226,7 +229,7 @@ def main_bis(exp, args, num_gpu):
         #setup_logger(file_name_bis, distributed_rank=rank, filename="val_log.txt", mode="a")
         #logger.info("Args: {}".format(args))
 
-        val_loader = exp.get_eval_loader(args.batch_size, is_distributed, args.test, return_origin_img=True, output_folder_name = os.path.join(args.nba_match, str(action_name)), nba_dataset = True)
+        val_loader = exp.get_eval_loader(args.batch_size, is_distributed, args.test, return_origin_img=True, output_folder_name = os.path.join(args.nba_match, str(action_name)), nba_dataset = False)
         evaluator = MOTEvaluator(
             args=args,
             dataloader=val_loader,
@@ -342,7 +345,7 @@ def main(exp, args, num_gpu):
         _ = evaluator.evaluate_mixsort(
             model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, results_folder
         )
-        #logger.info("\n" + summary)
+        logger.info("\n" + summary)
 
         logger.info('Completed')
 

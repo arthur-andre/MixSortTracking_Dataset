@@ -3,6 +3,7 @@ from loguru import logger
 from tqdm import tqdm
 
 import torch
+import cv2
 
 from yolox.utils import (
     gather,
@@ -16,6 +17,8 @@ from yolox.utils import (
 from yolox.sort_tracker.sort import Sort
 from yolox.deepsort_tracker.deepsort import DeepSort
 from yolox.motdt_tracker.motdt_tracker import OnlineTracker
+from yolox.utils.visualize import plot_tracking, plot_tracking_inference
+
 
 import contextlib
 import io
@@ -28,6 +31,14 @@ import time
 
 def write_results(filename, results):
     save_format = '{frame},{id},{x1},{y1},{w},{h},{s},-1,-1,-1\n'
+    print("filename result", filename)
+
+    filename = os.path.normpath(filename)
+    filename = os.path.abspath(filename)
+
+    print("new file name result", filename)
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:
         for frame_id, tlwhs, track_ids, scores in results:
             for tlwh, track_id, score in zip(tlwhs, track_ids, scores):
@@ -316,6 +327,11 @@ class MOTEvaluator:
             x = torch.ones(1, 3, test_size[0], test_size[1]).cuda()
             model(x)
             model = model_trt
+        path_video = "nba_videos/CHI_NYK/28.mp4"
+        cap = cv2.VideoCapture(path_video)
+        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
+        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
+        fps_vid = cap.get(cv2.CAP_PROP_FPS)
             
         tracker = MIXTracker(self.args)
         ori_thresh = self.args.track_thresh
@@ -380,7 +396,8 @@ class MOTEvaluator:
                         online_scores.append(t.score)
                 # save results
                 results.append((frame_id, online_tlwhs, online_ids, online_scores))
-
+                # online_im= plot_tracking_inference(                                                            #IF VIS NEEDED TO CHECK TRACKING, needs to 
+                #     imgs, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=fps_vid, nba_video=True)            #CHECK PATH IN visualize.py accordingly
             if is_time_record:
                 track_end = time_synchronized()
                 track_time += track_end - infer_end
@@ -395,9 +412,10 @@ class MOTEvaluator:
             data_list = list(itertools.chain(*data_list))
             torch.distributed.reduce(statistics, dst=0)
 
-        eval_results = self.evaluate_prediction(data_list, statistics)
+        #eval_results = self.evaluate_prediction(data_list, statistics)  ADD IF EVAL
         synchronize()
-        return eval_results
+        #return eval_results
+        return None
 
     def evaluate_mixsort_oc(
         self,
