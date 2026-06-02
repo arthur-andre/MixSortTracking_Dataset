@@ -3,9 +3,18 @@ from loguru import logger
 import torch
 import torch.backends.cudnn as cudnn
 from torch.nn.parallel import DistributedDataParallel as DDP
-import sys, os
+import sys
+import os
 import json
-sys.path.append(os.path.join(os.path.dirname(__file__), '../MixViT'))
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from pipeline._repo import setup_import_paths
+
+setup_import_paths()
+from pipeline.paths import DATASETS_ROOT
 from yolox.core import launch
 from yolox.exp import get_exp
 from yolox.utils import configure_nccl, fuse_model, get_local_rank, get_model_info, setup_logger
@@ -208,8 +217,7 @@ def main_bis(exp, args, num_gpu):
         decoder = None
 
 #######  ITERATION  ########
-    #directory_path= f'/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets/{args.nba_match}'
-    directory_path = f"datasets/{args.nba_match}"
+    directory_path = os.path.join(DATASETS_ROOT, args.nba_match)
     #action_names = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
     #action_names = sorted(action_names, key=int)
 

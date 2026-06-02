@@ -150,3 +150,11 @@ datasets/*
 !output/.gitkeep
 !nba_videos/.gitkeep
 !datasets/.gitkeep
+!datasets/README.md
+!nba_videos/README.md
+!output/README.md
+!assets/README.md
+!assets/demo_compressed.gif
+assets/demo.gif
+assets/demo.mp4
+!scripts/

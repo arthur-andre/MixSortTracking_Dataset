@@ -8,6 +8,11 @@ import torch.distributed as dist
 from yolox.exp import Exp as MyExp
 from yolox.data import get_yolox_datadir
 
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+_DATASETS_ROOT = os.environ.get("MIXSORT_DATASETS", os.path.join(_REPO_ROOT, "datasets"))
+_TRAIN_CLIP = os.environ.get("MIXSORT_TRAIN_CLIP", "lbj_clip")
+
+
 class Exp(MyExp):
     def __init__(self):
         super(Exp, self).__init__()
@@ -39,7 +44,7 @@ class Exp(MyExp):
             MosaicDetection,
         )
         dataset = MOTDataset(
-            data_dir=os.path.join(get_yolox_datadir(), "lbj_clip"),
+            data_dir=os.path.join(_DATASETS_ROOT, _TRAIN_CLIP),
             json_file=self.train_ann,
             name='train',
             img_size=self.input_size,
@@ -90,40 +95,23 @@ class Exp(MyExp):
 
         return train_loader
 
-    def get_eval_loader(self, batch_size, is_distributed, testdev=False, return_origin_img=False, output_folder_name=None, nba_dataset = False):
+    def get_eval_loader(self, batch_size, is_distributed, testdev=False, return_origin_img=False, output_folder_name=None, nba_dataset=False):
         from yolox.data import MOTDataset, ValTransform
-        print('eval loader')
-        if output_folder_name == None:
-            print("Error in output name")
-            return False
-        else:
-            print("name :", output_folder_name)
+        if output_folder_name is None:
+            raise ValueError("output_folder_name is required for evaluation")
 
-        if nba_dataset:
-            valdataset = MOTDataset(
-                #data_dir=os.path.join(get_yolox_datadir(), output_folder_name),    CHANGE IF LOCAL DATA
-                data_dir=os.path.join('/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets', output_folder_name),
-                json_file=self.val_ann,
-                img_size=self.test_size,
-                name='test', # change to train when running on training set
-                preproc=ValTransform(
-                    rgb_means=(0.485, 0.456, 0.406),
-                    std=(0.229, 0.224, 0.225),
-                ),
-                return_origin_img=return_origin_img,
-            )
-        else:
-            valdataset = MOTDataset(
-                data_dir=os.path.join(get_yolox_datadir(), output_folder_name),
-                json_file=self.val_ann,
-                img_size=self.test_size,
-                name='test', # change to train when running on training set
-                preproc=ValTransform(
-                    rgb_means=(0.485, 0.456, 0.406),
-                    std=(0.229, 0.224, 0.225),
-                ),
-                return_origin_img=return_origin_img,
-            )
+        data_dir = os.path.join(_DATASETS_ROOT, output_folder_name)
+        valdataset = MOTDataset(
+            data_dir=data_dir,
+            json_file=self.val_ann,
+            img_size=self.test_size,
+            name="test",
+            preproc=ValTransform(
+                rgb_means=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225),
+            ),
+            return_origin_img=return_origin_img,
+        )
 
         if is_distributed:
             batch_size = batch_size // dist.get_world_size()

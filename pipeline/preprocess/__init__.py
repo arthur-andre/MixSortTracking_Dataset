@@ -1,0 +1,1 @@
+# Video → MOT/COCO preprocessing

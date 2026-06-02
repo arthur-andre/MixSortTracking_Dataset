@@ -6,6 +6,9 @@ import cv2
 import numpy as np
 import os
 
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_OUTPUT_DIR = os.environ.get("MIXSORT_OUTPUT", os.path.join(_REPO_ROOT, "output"))
+
 __all__ = ["vis"]
 
 
@@ -82,13 +85,16 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=N
         cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
         cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
-    #save the image number of the frame
-    cv2.imwrite('output/frame{}.jpg'.format(frame_id), im)
+    os.makedirs(_OUTPUT_DIR, exist_ok=True)
+    cv2.imwrite(os.path.join(_OUTPUT_DIR, "frame{}.jpg".format(frame_id)), im)
     return im
 
 def plot_tracking_inference(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=None, nba_video=False):
     if nba_video:
-        image_directory = '/n/home12/aandre/MixSortTracking/datasets/28/test/28/img1'   #HERE CHANGE FOR VIZ
+        image_directory = os.environ.get(
+            "MIXSORT_VIZ_FRAMES",
+            os.path.join(_REPO_ROOT, "datasets", "28", "test", "28", "img1"),
+        )
 
         # Define the frame ID and format it to six digits with leading zeros
         frame_id_real = frame_id - 1
@@ -127,8 +133,9 @@ def plot_tracking_inference(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=
         cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
         cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
-    #save the image number of the frame
-    cv2.imwrite('output/KT/frame{}.jpg'.format(frame_id), im)
+    kt_dir = os.path.join(_OUTPUT_DIR, "KT")
+    os.makedirs(kt_dir, exist_ok=True)
+    cv2.imwrite(os.path.join(kt_dir, "frame{}.jpg".format(frame_id)), im)
     return im
 
 

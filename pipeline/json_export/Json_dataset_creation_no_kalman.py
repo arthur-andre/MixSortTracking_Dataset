@@ -4,8 +4,20 @@ from collections import defaultdict
 import pandas as pd
 import cv2
 import os
+import sys
 import argparse
 from math import pi
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+from pipeline.paths import (
+    clip_txt_path,
+    dataset_action_dir,
+    nba_video_path,
+    pose_npy_dir,
+    yolox_match_dir,
+)
 
 def center_pose(joints_3d, reference_idx):
     """
@@ -358,7 +370,7 @@ def calculate_features(player_id_frame,frame, match_data, action_name):
     You will need to implement your specific math for joint calculations here.
     """
 
-    path_data = '/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets/Input_Model/'+match_data + '/'+action_name + '/frame_' + str(frame) +'/npy/'
+    path_data = pose_npy_dir(match_data, action_name, frame)
     j3d_frame = np.load(path_data + 'j3d.npy')
     j2d_frame = np.load(path_data + 'j2d.npy')
 
@@ -958,23 +970,22 @@ def main():
     else:
         match_names = [args.match_name]
     for match_name in match_names:
-        directory_path= f'/n/home12/aandre/MixSortTracking/YOLOX_outputs/{match_name}'
-        action_names = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
-        if args.injuries_data == False:
+        directory_path = yolox_match_dir(match_name)
+        action_names = [
+            folder for folder in os.listdir(directory_path)
+            if os.path.isdir(os.path.join(directory_path, folder))
+        ]
+        if not args.injuries_data:
             action_names = sorted(action_names, key=int)
         for action_name in action_names:
-            print(f"Processing {match_name}/{str(action_name)}...")
-            #clip_file_path = '/Users/strom/Desktop/clip.txt'  
-            #output_json_path = '/Users/strom/Desktop/players_data.json' 
-            #video_path = "/Users/strom/Desktop/CHI_NYK/530.mp4"
+            print(f"Processing {match_name}/{action_name}...")
 
-            clip_file_path= f'/n/home12/aandre/MixSortTracking/YOLOX_outputs/{match_name}/{str(action_name)}/track_results/clip.txt'
-            output_json_path = f'/n/holylfs05/LABS/pfister_lab/Lab/coxfs01/pfister_lab2/Lab/aandre/datasets/{match_name}/{str(action_name)}/' 
-            video_path = f"/n/home12/aandre/MixSortTracking/nba_videos/{match_name}/{str(action_name)}.mp4"
+            clip_file_path = clip_txt_path(match_name, action_name)
+            output_dir = dataset_action_dir(match_name, action_name)
+            video_path = nba_video_path(match_name, action_name)
 
-            os.makedirs(output_json_path, exist_ok=True)
-
-            output_json_path = output_json_path + 'players_data.json'
+            os.makedirs(output_dir, exist_ok=True)
+            output_json_path = os.path.join(output_dir, "players_data.json")
             
             players_data = process_clip_file(clip_file_path, match_name, str(action_name))
 
